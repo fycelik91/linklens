@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LinkLens: URL Previewer
+
+LinkLens is a Next.js 14 application that allows you to preview URLs by fetching their metadata (title, description, and Open Graph image) with built-in SSRF protection and caching.
+
+## Tech Stack
+
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+
+## Features
+
+- **URL Preview**: Fetches and displays title, description, and `og:image` from any valid HTTP/HTTPS URL.
+- **SSRF Protection**: Prevents access to private IP ranges (localhost, 127.0.0.1, 10.x.x.x, 172.16-31.x.x, 192.168.x.x) and local domains (`*.local`).
+- **In-memory Cache**: Caches preview results for 10 minutes to reduce redundant requests and improve performance.
+- **Responsive Frontend**: Single-page application with URL input, preview card, and raw JSON display.
 
 ## Getting Started
 
-First, run the development server:
+### Local Development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1.  **Clone the repository (if applicable) or navigate to the project directory:**
+
+    ```bash
+    cd /tmp/linklens
+    ```
+
+2.  **Install dependencies:**
+
+    ```bash
+    npm install
+    ```
+
+3.  **Run the development server:**
+
+    ```bash
+    npm run dev
+    ```
+
+    Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+### API Usage
+
+The application exposes a single API endpoint for fetching URL previews.
+
+`GET /api/preview?url={targetUrl}`
+
+-   **`targetUrl`**: The URL you want to preview. Must be `http` or `https` and pass SSRF checks.
+
+**Example Request:**
+
+```
+GET /api/preview?url=https://www.google.com
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Example Success Response:**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```json
+{
+  "url": "https://www.google.com",
+  "title": "Google",
+  "description": "Search the world's information, including webpages, images, videos and more. Google has many special features to help you find exactly what you're looking for.",
+  "ogImage": "/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png",
+  "favicon": "https://www.google.com/favicon.ico"
+}
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Example Error Response (Invalid URL):**
 
-## Learn More
+```json
+{
+  "error": "Invalid URL format"
+}
+```
 
-To learn more about Next.js, take a look at the following resources:
+**Example Error Response (SSRF Protection):**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```json
+{
+  "error": "SSRF protection triggered: Access to private or local resources is forbidden."
+}
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Security Notes (SSRF Protection)
 
-## Deploy on Vercel
+LinkLens implements Server-Side Request Forgery (SSRF) protection to prevent malicious users from using the API to access internal resources or other sensitive information on the server's network. The following are blocked:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+-   `localhost` and `127.0.0.1`
+-   Private IPv4 ranges: `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`
+-   Local domains ending with `.local`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Always ensure that the `url` parameter provided to the API is from a trusted source or properly validated on the client-side as well.
