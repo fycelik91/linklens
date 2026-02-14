@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { JSDOM } from 'jsdom';
+import * as cheerio from 'cheerio';
 import { URL } from 'url';
 
 // Simple in-memory cache
@@ -72,12 +72,11 @@ export async function GET(req: NextRequest) {
     }
 
     const html = await response.text();
-    const dom = new JSDOM(html);
-    const document = dom.window.document;
+    const $ = cheerio.load(html);
 
-    const title = document.querySelector('title')?.textContent || document.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
-    const description = document.querySelector('meta[name="description"]')?.getAttribute('content') || document.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
-    const ogImage = document.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
+    const title = $('title').text() || $('meta[property="og:title"]').attr('content') || '';
+    const description = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '';
+    const ogImage = $('meta[property="og:image"]').attr('content') || '';
 
     const data = {
       url: targetUrl,
